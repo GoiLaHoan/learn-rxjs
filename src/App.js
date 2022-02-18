@@ -1,6 +1,6 @@
 import react, { useState, useEffect } from "react";
 import "./App.css";
-import { of, interval, concat, Subject, noop } from "rxjs";
+import { of, interval, concat, Subject, noop, empty } from "rxjs";
 import {
     takeWhile,
     takeUntil,
@@ -10,18 +10,24 @@ import {
     share,
     filter,
     tap,
+    switchMap,
 } from "rxjs/operators";
-const countdown$ = interval(250).pipe(
+const countdown$ = interval(500).pipe(
     startWith(5),
     scan((time) => time - 1),
-    takeWhile((time) => time > 0),
-    share()
+    takeWhile((time) => time > 0)
+    // share()
 );
-
 const actions$ = new Subject();
 const snooze$ = actions$
     .pipe(filter((action) => action === "snooze"))
-    .pipe(tap((x) => console.log(x)));
+    .pipe(tap((x) => console.log(x)))
+    .pipe(
+        switchMap(() => {
+            console.log("clicked");
+            return countdown$;
+        })
+    );
 const dismiss$ = actions$.pipe(filter((action) => action === "dismiss"));
 const snoozableAlarm$ = concat(countdown$, of("Được rồi đi thôi!")).pipe(
     repeatWhen(() => snooze$)
